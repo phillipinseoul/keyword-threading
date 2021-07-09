@@ -1,2 +1,7 @@
 pororo
 krwordrank
+openjdk-8-jdk
+python3-dev
+konlpy
+curl
+# bash <(curl -s https://raw.githubusercontent.com/konlpy/konlpy/master/scripts/mecab.sh)
