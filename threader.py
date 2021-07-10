@@ -20,8 +20,6 @@ for f in list_of_files:
 
 ### Define functions for keyword threading
 compare_keylist = Pororo(task="zero-topic", lang="ko")
-# keyword_list = []
-# text_list = []
 
 textNum = 1
 
