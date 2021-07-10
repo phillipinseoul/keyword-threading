@@ -47,8 +47,6 @@ def get_trending_keyword(textList):
         allText += (" " + t.text)
     noun_list = get_noun_list(allText)
     sentences = allText.split('. ')
-    # Print noun list
-    print(noun_list)
     try: 
         keyScore = compare_keylist(allText, noun_list)
         num = 0
@@ -70,7 +68,7 @@ if __name__ == "__main__":
     for text in ex_text:
         text_list.append(TextClass(text))
         tNum += 1
-        print("Text%d: " % tNum + text[:50] + "...")
+        # print("Text%d: " % tNum + text[:50] + "...")
 
         if tNum % 2 == 1 or tNum == 2:
             continue
