@@ -1,4 +1,5 @@
 from posix import EX_NOPERM
+from typing import Type
 from pororo import Pororo
 from krwordrank.word import KRWordRank, summarize_with_keywords
 import os
@@ -70,12 +71,17 @@ if __name__ == "__main__":
         tNum += 1
         # print("Text%d: " % tNum + text[:50] + "...")
 
-        if tNum % 2 == 1 or tNum == 2:
+        if tNum % 3 == 1 or tNum % 3 == 2 or tNum == 3:
             continue
         else:
-            tList = text_list[tNum-4 : tNum-1]
+            tList = text_list[tNum-6 : tNum-1]
             trending = get_trending_keyword(tList)
-            for word, score in trending:
-                print("%s : %d" % (word, score))
-            print()
+            try:
+                n = 1
+                for word, score in trending:
+                    print("%d. %s" % (n, word))
+                    n += 1
+                print()
+            except TypeError:
+                print("Could not extract keywords.")
 
