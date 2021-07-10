@@ -17,12 +17,6 @@ for f in list_of_files:
         text_file.close()
         ex_text.append(text_data)
 
-# for f in os.listdir():
-#     with open(f) as text_file:
-#         text_data = text_file.read().replace("\n", " ")
-#         text_file.close()
-#         ex_text.append(text_data)
-
 ### Define functions for keyword threading
 compare_keylist = Pororo(task="zero-topic", lang="ko")
 keyword_list = []
@@ -34,10 +28,8 @@ class TextClass:
     def __init__(self, text):
         self.keywords = []
         self.text = text
-
     def add_keyword(self, key):
         self.keywords.append(key)
-
 
 def keyword_threader(text, keyword_list):
     newText = TextClass(text)
@@ -105,6 +97,7 @@ if __name__ == "__main__":
     j = 1
     for text in ex_text:
         print("Text%d: " % j + text[:50] + "...")
+        print(okt.nouns(text))
         keyword_threader(text, keyword_list)
         print()
         j += 1
