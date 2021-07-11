@@ -29,15 +29,31 @@ class TextClass:
     def add_keyword(self, key):
         self.keywords.append(key)
 
-def keyword_extractor(newText):
-    text = newText.text
-    sentences = text.replace('?', '.').replace('!', '.').split('. ')
+# Preprocessing: Extract nouns in a text
+def preprocessing(newText):
+    original_text = newText.text
+    sentences = original_text.replace("\n", "").replace('?', '.').replace('!', '.').split('. ')
+    processed_text = ''
+    for sentence in sentences:
+        word_analysis = khaiiiWord.analyze(sentence)
+        temp = []
+        for word in word_analysis:
+            for morph in word.morphs:
+                if morph.tag in ['NNP', 'NNG'] and len(morph.lex) > 1:
+                    temp.append(morph.lex)
+        temp = ' '.join(temp)
+        temp += '. '
+        processed_text += temp
+    return processed_text
 
+def keyword_extractor(newText):
+    processed_text = preprocessing(newText)
+    sentences = processed_text.split('. ')
     try:
         keywords = summarize_with_keywords(sentences, min_count=1, max_length=15)
         for word, r in sorted(keywords.items(), key=lambda x:x[1], reverse=True)[:3]:
             # print("%s: %.4f" % (word, r))
-            if r >= 3:
+            if r >= 1.5:
                 newText.add_keyword(word)
         return newText
     except AttributeError:
@@ -46,10 +62,10 @@ def keyword_extractor(newText):
 # Returns list of nouns (일반명사, 고유명사) from text
 def get_noun_list(text):
     noun_list = []
-    noun_analysis = khaiiiWord.analyze(text)
-    for word in noun_analysis:
+    word_list = khaiiiWord.analyze(text)
+    for word in word_list:
         for morph in word.morphs:
-            if morph.tag == 'NNP' or morph.tag == 'NNG':
+            if morph.tag in ['NNP', 'NNG']:
                 noun_list.append(morph.lex)
     return noun_list
 
@@ -58,7 +74,6 @@ def get_trending_keyword(textList):
     for t in textList:
         allText += (" " + t.text)
     noun_list = get_noun_list(allText)
-    sentences = allText.split('. ')
     try: 
         keyScore = compare_keylist(allText, noun_list)
         num = 0
@@ -92,11 +107,12 @@ if __name__ == "__main__":
             tList = text_list[tNum-6 : tNum-1]
             trending = get_trending_keyword(tList)
             try:
+                print('\n\n[Trending Keywords]')
                 n = 1
                 for word, score in trending:
                     print("%d. %s" % (n, word))
                     n += 1
                 print()
             except TypeError:
-                print("Could not extract keywords.")
+                print("Could not extract keywords. The text is too long!\n")
 
