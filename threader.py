@@ -32,6 +32,20 @@ class TextClass:
     def add_keyword(self, key):
         self.keywords.append(key)
 
+def keyword_extractor(newText):
+    text = newText.text
+    sentences = text.replace('?', '.').replace('!', '.').split('. ')
+
+    try:
+        keywords = summarize_with_keywords(sentences, min_count=1, max_length=15)
+        for word, r in sorted(keywords.items(), key=lambda x:x[1], reverse=True)[:3]:
+            # print("%s: %.4f" % (word, r))
+            if r >= 3:
+                newText.add_keyword(word)
+        return newText
+    except AttributeError:
+        print("Attribute Error 발생")
+
 # Returns list of nouns (일반명사, 고유명사) from text
 def get_noun_list(text):
     noun_list = []
@@ -55,7 +69,6 @@ def get_trending_keyword(textList):
         for word, score in sorted(keyScore.items(), key=lambda x:x[1], reverse=True)[:10]:
             if num == 10:
                 break
-            # print("%s : %d" % (word, score))
             trending_keywords.append((word, score))
         return trending_keywords
     except ValueError:
@@ -67,9 +80,14 @@ if __name__ == "__main__":
     tNum = 0
 
     for text in ex_text:
-        text_list.append(TextClass(text))
+        newText = TextClass(text)
+        newText_2 = keyword_extractor(newText)
+        text_list.append(newText_2)
         tNum += 1
-        # print("Text%d: " % tNum + text[:50] + "...")
+        print("Text%d: " % tNum + text[:50] + "...", end="\t")
+        for keyword in newText_2.keywords:
+            print("#%s " % keyword, end="")
+        print()
 
         if tNum % 3 == 1 or tNum % 3 == 2 or tNum == 3:
             continue
