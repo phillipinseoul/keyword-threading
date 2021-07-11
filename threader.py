@@ -1,3 +1,4 @@
+from logging import lastResort
 from posix import EX_NOPERM
 from typing import Type
 from pororo import Pororo
@@ -46,73 +47,64 @@ def preprocessing(newText):
         processed_text += temp
     return processed_text
 
-def keyword_extractor(newText):
-    processed_text = preprocessing(newText)
-    sentences = processed_text.split('. ')
+def updateLatestText(processedText, latestText):
+    if len(latestText) == 6:
+        latestText.pop(0)
+    latestText.append(processedText)
+    return latestText
+
+def keyword_extractor(newText, textList, latestText):
+    processedText = preprocessing(newText)
+    sentences = processedText.split('. ')
     try:
         keywords = summarize_with_keywords(sentences, min_count=1, max_length=15)
         for word, r in sorted(keywords.items(), key=lambda x:x[1], reverse=True)[:3]:
             # print("%s: %.4f" % (word, r))
             if r >= 1.5:
                 newText.add_keyword(word)
-        return newText
+        textList.append(newText)
+        latestText = updateLatestText(processedText, latestText)
+        return newText, textList, latestText
     except AttributeError:
         print("Attribute Error 발생")
+        
 
-# Returns list of nouns (일반명사, 고유명사) from text
-def get_noun_list(text):
-    noun_list = []
-    word_list = khaiiiWord.analyze(text)
-    for word in word_list:
-        for morph in word.morphs:
-            if morph.tag in ['NNP', 'NNG']:
-                noun_list.append(morph.lex)
-    return noun_list
+def get_trending_keyword(latestText):
+    sentences = []
+    for text in latestText:
+        sentences += text.split('.')
+    sentences = list(filter(None, sentences))
 
-def get_trending_keyword(textList):
-    allText = ""
-    for t in textList:
-        allText += (" " + t.text)
-    noun_list = get_noun_list(allText)
-    try: 
-        keyScore = compare_keylist(allText, noun_list)
-        num = 0
-        trending_keywords = []
-        for word, score in sorted(keyScore.items(), key=lambda x:x[1], reverse=True)[:10]:
-            if num == 10:
-                break
-            trending_keywords.append((word, score))
-        return trending_keywords
-    except ValueError:
-        print("Tokens exceeds maximum length: 515 > 512")
+    trending_keywords = []
+    keywords = summarize_with_keywords(sentences, min_count=1, max_length=15)
+    i = 1
+    for word, r in sorted(keywords.items(), key=lambda x:x[1], reverse=True)[:10]:
+        trending_keywords.append(word)
+        print("%d.\t%s" % (i, word))
+        i += 1
+    return trending_keywords
 
 ### Get input for default keyword list
 if __name__ == "__main__":
-    text_list = []
+    textList = []           # List of all texts
+    latestText = []         # List of latest 6 'processed' text
     tNum = 0
-
     for text in ex_text:
         newText = TextClass(text)
-        newText_2 = keyword_extractor(newText)
-        text_list.append(newText_2)
+        newText, textList, latestText = keyword_extractor(newText, textList, latestText)
         tNum += 1
         print("Text%d: " % tNum + text[:50] + "...", end="\t")
-        for keyword in newText_2.keywords:
+        for keyword in newText.keywords:
             print("#%s " % keyword, end="")
         print()
 
         if tNum % 3 == 1 or tNum % 3 == 2 or tNum == 3:
             continue
         else:
-            tList = text_list[tNum-6 : tNum-1]
-            trending = get_trending_keyword(tList)
-            try:
-                print('\n\n[Trending Keywords]')
-                n = 1
-                for word, score in trending:
-                    print("%d. %s" % (n, word))
-                    n += 1
-                print()
-            except TypeError:
-                print("Could not extract keywords. The text is too long!\n")
-
+            trending = get_trending_keyword(latestText)
+            print('\n\n[Trending Keywords]')
+            n = 1
+            for word in trending:
+                print("%d.\t%s" % (n, word))
+                n += 1
+            print()
