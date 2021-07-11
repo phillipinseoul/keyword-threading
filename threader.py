@@ -1,15 +1,18 @@
 from posix import EX_NOPERM
+from typing import Type
 from pororo import Pororo
-from krwordrank.word import KRWordRank, summarize_with_keywords
-import operator
-import json
+from krwordrank.word import summarize_with_keywords
 import os
+from khaiii import KhaiiiApi
 
+# Initialize khaiii object
+khaiiiWord = KhaiiiApi()
 
 ### Get .txt files from directory /textfiles
 os.chdir('meeting_example')
 ex_text = []
-for f in os.listdir():
+list_of_files = sorted(os.listdir())
+for f in list_of_files:
     with open(f) as text_file:
         text_data = text_file.read().replace("\n", " ")
         text_file.close()
@@ -17,85 +20,99 @@ for f in os.listdir():
 
 ### Define functions for keyword threading
 compare_keylist = Pororo(task="zero-topic", lang="ko")
-keyword_list = []
-text_list = []
-
 textNum = 1
 
 class TextClass:
     def __init__(self, text):
         self.keywords = []
         self.text = text
-
     def add_keyword(self, key):
         self.keywords.append(key)
 
+# Preprocessing: Extract nouns in a text
+def preprocessing(newText):
+    original_text = newText.text
+    sentences = original_text.replace("\n", "").replace('?', '.').replace('!', '.').split('. ')
+    processed_text = ''
+    for sentence in sentences:
+        word_analysis = khaiiiWord.analyze(sentence)
+        temp = []
+        for word in word_analysis:
+            for morph in word.morphs:
+                if morph.tag in ['NNP', 'NNG'] and len(morph.lex) > 1:
+                    temp.append(morph.lex)
+        temp = ' '.join(temp)
+        temp += '. '
+        processed_text += temp
+    return processed_text
 
-def keyword_threader(text, keyword_list):
-    newText = TextClass(text)
-    text_list.append(newText)
-
-    keyScore = compare_keylist(text, keyword_list)
-    maxKey = max(keyScore, key=lambda key: keyScore[key])
-
-    if keyScore[maxKey] >= 50:
-        newText = put_in_original_keyword(newText, keyScore)
-        print("기존의 키워드에 포함됩니다: ", end="")
-        print(newText.keywords)
-    else:
-        newText = extract_new_keyword(newText)
-        print("새로운 키워드가 추가되었습니다: ", end="")
-        print(newText.keywords)
-
-
-def put_in_original_keyword(newText, keyScore):
-    for key, value in keyScore.items():
-        if value >= 50:
-            newText.add_keyword(key)
-
-    return newText
-
-def extract_new_keyword(newText):
-    text = newText.text
-    sentences = text.split('. ')
+def keyword_extractor(newText):
+    processed_text = preprocessing(newText)
+    sentences = processed_text.split('. ')
     try:
         keywords = summarize_with_keywords(sentences, min_count=1, max_length=15)
         for word, r in sorted(keywords.items(), key=lambda x:x[1], reverse=True)[:3]:
-            keyword_list.append(word)
-            newText.add_keyword(word)
+            # print("%s: %.4f" % (word, r))
+            if r >= 1.5:
+                newText.add_keyword(word)
         return newText
     except AttributeError:
         print("Attribute Error 발생")
 
+# Returns list of nouns (일반명사, 고유명사) from text
+def get_noun_list(text):
+    noun_list = []
+    word_list = khaiiiWord.analyze(text)
+    for word in word_list:
+        for morph in word.morphs:
+            if morph.tag in ['NNP', 'NNG']:
+                noun_list.append(morph.lex)
+    return noun_list
 
+def get_trending_keyword(textList):
+    allText = ""
+    for t in textList:
+        allText += (" " + t.text)
+    noun_list = get_noun_list(allText)
+    try: 
+        keyScore = compare_keylist(allText, noun_list)
+        num = 0
+        trending_keywords = []
+        for word, score in sorted(keyScore.items(), key=lambda x:x[1], reverse=True)[:10]:
+            if num == 10:
+                break
+            trending_keywords.append((word, score))
+        return trending_keywords
+    except ValueError:
+        print("Tokens exceeds maximum length: 515 > 512")
 
 ### Get input for default keyword list
 if __name__ == "__main__":
-    while True:
-        input_keyword = input("Default thread를 입력해주세요 (건너뛰기: Enter): ")
-        if input_keyword == "":
-            break
-        else:
-            keyword_list.append(input_keyword)
-        
-    try: 
-        if len(keyword_list) == 0:
-            raise ValueError
-    except ValueError:
-        print("키워드를 1개 이상 입력해야 합니다.")
+    text_list = []
+    tNum = 0
 
-    print("\nDefault Keyword List: ", end="")
-    print(keyword_list)
-    print()
-
-    stopwords = {}
-    j = 1
     for text in ex_text:
-        print("Text%d: " % j + text[:50] + "...")
-        keyword_threader(text, keyword_list)
+        newText = TextClass(text)
+        newText_2 = keyword_extractor(newText)
+        text_list.append(newText_2)
+        tNum += 1
+        print("Text%d: " % tNum + text[:50] + "...", end="\t")
+        for keyword in newText_2.keywords:
+            print("#%s " % keyword, end="")
         print()
-        j += 1
-    
-    print(keyword_list)
 
-    
+        if tNum % 3 == 1 or tNum % 3 == 2 or tNum == 3:
+            continue
+        else:
+            tList = text_list[tNum-6 : tNum-1]
+            trending = get_trending_keyword(tList)
+            try:
+                print('\n\n[Trending Keywords]')
+                n = 1
+                for word, score in trending:
+                    print("%d. %s" % (n, word))
+                    n += 1
+                print()
+            except TypeError:
+                print("Could not extract keywords. The text is too long!\n")
+
