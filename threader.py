@@ -1,7 +1,7 @@
 from posix import EX_NOPERM
 from typing import Type
 from pororo import Pororo
-from krwordrank.word import KRWordRank, summarize_with_keywords
+from krwordrank.word import summarize_with_keywords
 import os
 from khaiii import KhaiiiApi
 
@@ -20,9 +20,6 @@ for f in list_of_files:
 
 ### Define functions for keyword threading
 compare_keylist = Pororo(task="zero-topic", lang="ko")
-# keyword_list = []
-# text_list = []
-
 textNum = 1
 
 class TextClass:
