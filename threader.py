@@ -67,7 +67,7 @@ def keyword_extractor(newText, textList, latestText):
         return newText, textList, latestText
     except AttributeError:
         print("Attribute Error 발생")
-        
+
 
 def get_trending_keyword(latestText):
     sentences = []
@@ -80,7 +80,6 @@ def get_trending_keyword(latestText):
     i = 1
     for word, r in sorted(keywords.items(), key=lambda x:x[1], reverse=True)[:10]:
         trending_keywords.append(word)
-        print("%d.\t%s" % (i, word))
         i += 1
     return trending_keywords
 
