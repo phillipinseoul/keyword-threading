@@ -1,6 +1,6 @@
-from logging import lastResort
-from posix import EX_NOPERM
-from typing import Type
+# from logging import lastResort
+# from posix import EX_NOPERM
+# from typing import Type
 from pororo import Pororo
 from krwordrank.word import summarize_with_keywords
 import os
@@ -20,9 +20,6 @@ for f in list_of_files:
         ex_text.append(text_data)
 
 ### Define functions for keyword threading
-compare_keylist = Pororo(task="zero-topic", lang="ko")
-textNum = 1
-
 class TextClass:
     def __init__(self, text):
         self.keywords = []
@@ -97,9 +94,7 @@ if __name__ == "__main__":
             print("#%s " % keyword, end="")
         print()
 
-        if tNum % 3 == 1 or tNum % 3 == 2 or tNum == 3:
-            continue
-        else:
+        if tNum % 3 == 0 and tNum > 3:
             trending = get_trending_keyword(latestText)
             print('\n\n[Trending Keywords]')
             n = 1
