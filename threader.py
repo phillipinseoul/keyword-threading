@@ -44,11 +44,11 @@ def preprocessing(newText):
         processed_text += temp
     return processed_text
 
-def updateLatestText(processedText, latestText):
-    if len(latestText) == 6:
-        latestText.pop(0)
-    latestText.append(processedText)
-    return latestText
+# def updateLatestText(processedText, latestText):
+#     if len(latestText) == 6:
+#         latestText.pop(0)
+#     latestText.append(processedText)
+#     return latestText
 
 def keyword_extractor(newText, textList, latestText):
     processedText = preprocessing(newText)
